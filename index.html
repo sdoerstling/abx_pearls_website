@@ -1,16 +1,653 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ABX Pearls</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABX Pearls - Antimicrobial Stewardship Education</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <!-- Import Formula Condensed from Fontshare -->
-  <link href="https://api.fontshare.com/v2/css?f[]=formula-condensed@400,600&display=swap" rel="stylesheet">
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
 
-  <!-- Your CSS -->
-  <link rel="stylesheet" href="style.css">
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 1.5rem 2rem;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #000;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .header h1:hover {
+            opacity: 0.7;
+        }
+
+        .container {
+            display: flex;
+            margin-top: 70px;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 280px;
+            background-color: #fafafa;
+            border-right: 1px solid #e5e5e5;
+            padding: 2rem 0;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #999;
+            padding: 0 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            color: #333;
+            border-left: 3px solid transparent;
+        }
+
+        .category-item:hover {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+
+        .category-item.active {
+            background-color: #fff;
+            border-left-color: #000;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 3rem;
+            max-width: 900px;
+        }
+
+        .search-container {
+            margin-bottom: 3rem;
+        }
+
+        .search-container.hidden {
+            display: none;
+        }
+
+        .search-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            color: #000;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid #e5e5e5;
+            border-radius: 4px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .search-results {
+            margin-top: 1.5rem;
+        }
+
+        .search-result-item {
+            background-color: #fafafa;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .search-result-category {
+            font-size: 0.8rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-question {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .search-result-answer {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .content-header {
+            margin-bottom: 3rem;
+        }
+
+        .content-header.hidden {
+            display: none;
+        }
+
+        .content-header h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-count {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .qa-card {
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background-color: #fafafa;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .qa-card:hover {
+            background-color: #f5f5f5;
+            border-color: #d0d0d0;
+        }
+
+        .question {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .answer {
+            font-size: 1rem;
+            color: #333;
+            line-height: 1.8;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid #e5e5e5;
+            }
+
+            .content {
+                margin-left: 0;
+                padding: 2rem 1.5rem;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>ABX Pearls</h1>
+    <div class="header">
+        <h1 id="headerTitle">ABX Pearls</h1>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div id="categoryList"></div>
+        </aside>
+
+        <main class="content">
+            <div class="search-container" id="searchContainer">
+                <h2 class="search-title">Start here to search</h2>
+                <input 
+                    type="text" 
+                    class="search-box" 
+                    id="searchBox" 
+                    placeholder="Search questions and answers..."
+                    autocomplete="off"
+                >
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <div class="content-header hidden" id="contentHeader">
+                <h2 id="categoryTitle">Select a category</h2>
+                <p class="content-count" id="contentCount"></p>
+            </div>
+            <div id="contentArea"></div>
+        </main>
+    </div>
+
+    <script id="csvData" type="text/plain">
+category,title,question,answer
+Bacteremia/IE/endovascular,,How can I decrease unnecessary blood cultures?,"Only obtain blood cultures when there is a clear clinical indication for bacteremia (fever >38°C, sepsis, endocarditis concern). Avoid routine cultures for low-risk scenarios. Use proper collection technique to minimize contamination."
+Immunocompromised,,ICH patient with severe cytopenias while on PJP prophylaxis with (TMP/SMX). How might I address this issue?,"Consider switching from TMP-SMX to alternative PJP prophylaxis such as dapsone (if G6PD normal), atovaquone, or inhaled pentamidine to avoid bone marrow suppression."
+Instructions,,Welcome to SHC! How to find SHC Clinical ID guidelines [orientation for July],"Access Stanford Health Care ID guidelines through the institutional intranet or ID department website. Contact ID pharmacy or ID consult service for orientation materials."
+GU,,"Nitrofurantoin for uncomplicated UTIs. What is first-line oral ABX for uncomplicated cystitis at SHC?","Nitrofurantoin 100mg PO BID x 5 days is first-line for uncomplicated cystitis in non-pregnant patients with normal renal function (CrCl >30)."
+Immunocompromised,,My immunocompromised patient is admitted to the ICU and starting ABX for presumed CAP. Do they need empiric MRSA and Pseudomonal coverage?,"Yes, immunocompromised patients with severe CAP requiring ICU admission should receive empiric coverage for MRSA (vancomycin or linezolid) and Pseudomonas (antipseudomonal beta-lactam) until cultures result."
+Respiratory/pulm,,"If my patient with pneumonia has a negative MRSA nares PCR should I continue MRSA coverage? This MRSA nasal PCR sounds great, how do I order it? Is the MRSA culture the same thing? (2 parts)","Negative MRSA nasal PCR has high negative predictive value (>95%) - can safely discontinue MRSA coverage. Order as MRSA PCR nasal swab. MRSA culture takes longer and is less sensitive - PCR is preferred."
+Respiratory/pulm,,"Patient with aspiration event and new onset fever and hypoxia, started on empiric antibiotics for suspected aspiration pneumonia. Fever and hypoxia rapidly resolve within 12 hours and is now on room air. Should we continue antibiotics? (2 parts)","Consider stopping antibiotics. Rapid improvement suggests chemical pneumonitis rather than bacterial pneumonia. If truly bacterial, would expect slower resolution. Observe off antibiotics if clinically stable."
+Micro/Diagnostics,,Antibiogram - How is it developed every year and how should I use it,"The antibiogram shows cumulative susceptibility data from the institution over the past year. Use it to guide empiric therapy based on local resistance patterns. Updated annually. Check if data is from inpatient vs outpatient."
+Respiratory/pulm,,"In suspected aspiration pneumonia, is empiric anaerobic coverage indicated?","No. Anaerobic coverage is NOT routinely needed for aspiration pneumonia. Studies show no benefit. Use standard CAP coverage (ceftriaxone + azithromycin) unless lung abscess or empyema present."
+CDI,,"My patient has severe, persistent abdominal pain with C.difficile test results as follows (PCR+, EIA-). Should I treat it?","PCR+ but toxin EIA- suggests colonization rather than active infection in most cases. Do not treat unless high clinical suspicion (severe diarrhea, leukocytosis, colitis on imaging). Treat the patient, not the test."
+Respiratory/pulm,,My patient was admitted for COVID-19. Should my patient also be on antibacterial therapy for CAP?,"Bacterial co-infection with COVID-19 is rare (<5%). Avoid empiric antibiotics unless clear bacterial pneumonia features (lobar infiltrate, elevated procalcitonin >0.5). Reassess need for antibiotics daily."
+GU,,"My patient has altered mental status, and urine culture is growing pan sensitive E.coli (>100,000 CFU/mL). They are unable to verbalize presence of UTI symptoms. Should I treat for UTI?","Likely asymptomatic bacteriuria - do not treat. AMS alone is not a UTI symptom in the absence of urinary symptoms. Look for alternative causes of delirium. Only treat ASB in pregnancy or pre-urologic procedures."
+GU,,"The UA showed elevated WBC (pyuria) or bacteria. Is this a UTI?  UA interpretation: such as nitrites, leukocyte esterase, etc? (2 pearls)","Pyuria and bacteriuria alone do not diagnose UTI - need symptoms! Positive nitrites are specific but not sensitive. Leukocyte esterase is sensitive but not specific. Clinical symptoms + positive UA = UTI."
+Bacteremia/IE/endovascular,,"My patient presented with septic shock E. coli bacteremia (urinary source). What is the duration of therapy and must I use IV to complete the course for gram negative rod (GNR) bacteremia?","Uncomplicated GNR bacteremia: 7-14 days total. Can transition to PO with highly bioavailable agents (fluoroquinolone, TMP-SMX) once clinically stable and source controlled. No need to complete full course IV."
+Micro/Diagnostics,,"I sent a respiratory culture on my intubated patient, but the result says Failed Gram Screen for Culture. What does this mean?","Sample quality was poor - too many squamous epithelial cells, indicating oral contamination. Repeat culture with better deep sputum sample or consider bronchoscopy for true lower respiratory specimen."
+Micro/Diagnostics,,"My patient has 4+ growth on respiratory cx, what does this mean? (Microbiology pearl)","4+ growth indicates heavy growth, suggesting high organism burden. This is semi-quantitative reporting (1+ to 4+). Consider clinical context - may represent true pathogen vs. colonization depending on symptoms."
+Candidemia,,"My patient is growing yeast in blood cultures, is this Candida?","Most likely Candida species (>95% of fungemia). Start empiric antifungal (echinocandin preferred) immediately while awaiting speciation. Never dismiss yeast in blood as contaminant."
+Candidemia,,"In patients with candidemia, should central venous catheters be removed?","Yes! Remove or exchange all central venous catheters within 24-48 hours if feasible. Improves outcomes and reduces treatment failure. One of the most important interventions in candidemia management."
+Candidemia,,The laboratory just notified me that my patient is growing a Candida species in their blood that I have not heard of before. How do I know which antifungal agent to use? What do I need to know about the different Candida species? But Candida only grew in 1/4 bottles. Is this a contaminant? (2 parts),"Echinocandin is first-line for most Candida species. C. albicans/parapsilosis generally susceptible. C. auris often resistant. C. krusei is fluconazole-resistant. Even 1/4 bottles is REAL - never a contaminant. Treat all candidemia."
+Respiratory/pulm,,Which findings on CXR are diagnostic of Pneumonia?,"No single CXR finding is pathognomonic. Look for new infiltrate (lobar consolidation, patchy opacities) plus clinical symptoms. Remember CXR can lag clinical presentation and be normal in early/dehydrated patients."
+Respiratory/pulm,,My intubated patient appears to be growing something on her respiratory culture we obtained when she spiked a fever. Should we treat for VAP?,"Use clinical criteria (fever, increased secretions, hypoxemia, new infiltrate) plus culture data. Do not treat culture alone. Consider Clinical Pulmonary Infection Score (CPIS). May represent colonization if clinically stable."
+Respiratory/pulm,,"If my patient with pneumonia has a positive MRSA nasal PCR but respiratory cultures are negative, do I need to continue vancomycin for a full course of therapy? If respiratory cultures are n/a, do I need to continue vancomycin for a full course of therapy?","Positive MRSA PCR with negative respiratory cultures: can stop vancomycin. If no respiratory cultures obtained and clinically improving, can stop vancomycin after 48-72 hours based on clinical response."
+Micro/Diagnostics,,"When the lab reports organisms that are Not Predominant, Part of Mixed Flora, or Part of normal oropharyngeal flora, what does that mean?","These organisms are likely contaminants from upper airway or poor specimen quality. Do not treat unless strong clinical evidence of infection. Request better quality specimen if true infection suspected."
+Micro/Diagnostics,,"When the lab reports organisms that are No MRSA or P. aeruginosa Isolated, what does that mean?","This is reported for respiratory cultures to help guide targeted therapy. Negative report allows de-escalation from empiric MRSA/Pseudomonas coverage if clinically appropriate."
+GU,,Can I use amoxicillin/clavulanate to treat ESBL E.coli cystitis if the micro reports it being susceptible?,"Yes! For uncomplicated cystitis (not pyelonephritis or bacteremia), amoxicillin-clavulanate can be used if susceptible, despite ESBL. Reserve carbapenems for complicated infections."
+GU,,When is it acceptable to send a urine analysis or urine culture? 09-2024 updated algorithm,"Send UA/UCx only when urinary symptoms present (dysuria, frequency, urgency, suprapubic pain) or pre-urologic procedure. Do not send for AMS alone, fever without localizing symptoms, or routine screening."
+Micro/Diagnostics,,Lactose fermenters vs. non-fermenters,"Lactose fermenters (E. coli, Klebsiella) appear pink on MacConkey agar. Non-fermenters (Pseudomonas, Proteus, Serratia) appear colorless. Helps with preliminary organism identification while awaiting full ID."
+Respiratory/pulm,,I have a patient with HAP/VAP with a planned 7 day antibiotic treatment duration. Can we treat for a shorter course?,"Standard HAP/VAP duration is 7 days if good clinical response. Can consider shorter (5 days) if low CPIS, rapid improvement, and adequate source control. Do not routinely treat longer than 7 days."
+GU,,Urine culture/candiduria,"Candiduria is usually asymptomatic colonization - do not treat routinely. Only treat if symptomatic UTI, neutropenic, or pre-urologic procedure. Removing Foley often clears candiduria."
+GU,,Optimal management of UTI (duration) - infographic,"Uncomplicated cystitis: 5 days (nitrofurantoin/Bactrim). Pyelonephritis: 5-7 days (fluoroquinolone) or 10-14 days (beta-lactam). Men with cystitis: 5-7 days. Complicated UTI: 7-14 days depending on source control."
+Respiratory/pulm,,"My patient with bronchiectasis was admitted with cough, shortness of breath, and increased sputum production, c/f possible acute exacerbation. Respiratory cultures were sent. What organisms should I cover?","Cover Pseudomonas and other gram-negatives. Consider MRSA if prior isolation or severe disease. Use antipseudomonal beta-lactam (pip-tazo, cefepime, meropenem) based on prior culture history and local resistance."
+Respiratory/pulm,,"My patient has isolated Candida species from respiratory culture, Do I need to treat this?","No. Candida in respiratory cultures represents colonization, not infection. Do not treat with antifungals. Focus on bacterial pathogens if pneumonia is present."
+Immunocompromised,,Should I add vanco for severe mucositis in my patient with persistent neutropenic fever (NF) of unknown etiology?,"Consider adding vancomycin for severe mucositis (grade 3-4) or concern for catheter-related infection. Otherwise, anti-MRSA coverage not routinely needed for initial empiric therapy in febrile neutropenia."
+Skin/Soft Tissue/Osteoarticular,,Should I use results of a nasal MRSA PCR or culture to guide empiric vancomycin use in skin and soft tissue infections (SSTI)?,"Negative MRSA nasal PCR has high NPV - can help avoid vancomycin. However, clinical assessment is key. Purulent infections still need MRSA coverage regardless. Use PCR to guide non-purulent cellulitis decisions."
+Bugs and their Drugs,,ESBL new lab comment,"ESBL organisms hydrolyze penicillins and cephalosporins. Report may show susceptible to pip-tazo or cephalosporins in vitro, but clinical data supports avoiding these. Use carbapenems, fluoroquinolones, or TMP-SMX for invasive infections."
+Micro/Diagnostics,,AmpC new lab comment,"AmpC beta-lactamases are inducible - organism may appear susceptible to cephalosporins initially but develop resistance during therapy. Avoid 3rd generation cephalosporins. Use cefepime, carbapenems, or fluoroquinolones."
+CDI,,"My patient is on antibacterial coverage, but I want to decrease C difficile infection (CDI) risk. Are there antibiotic strategies I can utilize to lower the risk of CDI?","Use narrow-spectrum antibiotics when possible. Avoid fluoroquinolones, clindamycin, cephalosporins if alternatives exist. Shortest effective duration. De-escalate based on cultures. Avoid unnecessary antibiotics."
+GI,,"My patient is admitted for an intra-abdominal infection. Is empiric IV Vancomycin, in addition to gram-negative and anaerobic coverage, needed to provide coverage for MRSA?","No. Vancomycin not routinely needed for community-acquired intra-abdominal infections. MRSA rare in this setting. Use gram-negative and anaerobic coverage (e.g., pip-tazo, ceftriaxone + metronidazole)."
+GI,,"My patient is admitted with an acute biliary infection. In addition to covering empirically for gram-positive streptococci and gram-negative rods, is empiric anaerobic coverage needed?","No. Anaerobic coverage not needed for routine biliary infections. Use ceftriaxone or fluoroquinolone. Add anaerobes (metronidazole) only if prior biliary-enteric anastomosis or severe infection."
+Antibiotics,,I heard there is a national IV fluids shortage. How can I safely transition to PO antibiotics?,"Transition to PO when: hemodynamically stable, tolerating PO intake, functioning GI tract, appropriate oral agent available. Many agents have excellent bioavailability (fluoroquinolones, linezolid, metronidazole, fluconazole, TMP-SMX)."
+Skin/Soft Tissue/Osteoarticular,,What are common mimickers of cellulitis?,"Stasis dermatitis, lipodermatosclerosis, contact dermatitis, DVT, gout, panniculitis. Look for bilateral involvement, absence of fever/leukocytosis, chronic changes, violaceous color suggesting non-infectious etiology."
+Skin/Soft Tissue/Osteoarticular,,When should you consider empiric MRSA coverage for SSTI treatment?,"Cover MRSA for: purulent infections (abscess, furuncle), penetrating trauma, IVDU, known MRSA colonization/infection, systemic toxicity. Non-purulent cellulitis usually does not need MRSA coverage."
+Skin/Soft Tissue/Osteoarticular,,Do I need combination therapy for GAS and MRSA when treating non-purulent cellulitis?,"No. Non-purulent cellulitis is typically streptococcal (GAS). Use beta-lactam alone (cefazolin, cephalexin). Only add MRSA coverage for purulent infections or systemic toxicity."
+GI,,"How long should I treat intra-abdominal infections? (2 parts). peritonitis, biliary, appendicitis","Adequate source control achieved: 4 days. Appendicitis with source control: 24 hours post-op. Biliary with source control: 24-48 hours. Peritonitis without source control: continue until clinical improvement."
+Respiratory/pulm,,Which subset of patients with Community acquired pneumonia can be treated with a duration of antibiotics less than 5 days?,"Patients with rapid clinical improvement (afebrile <48 hours, stable vitals, tolerating PO, improving symptoms) can complete 5 days total. Standard remains 5-7 days. Do not extend routinely beyond 7 days."
+GU,,My patient is admitted for heart failure and has a chronic indwelling foley with cloudy urine. Should I send a urinalysis or urine culture (UCx) to assess for UTI?,"No. Chronic Foley patients have bacteriuria by definition. Cloudy urine is expected. Do not send UA/UCx without UTI symptoms (fever + flank pain or suprapubic pain). This is asymptomatic bacteriuria."
+Respiratory/pulm,,My patient is admitted to the ICU with influenza. What are treatment options? Q2: ED flu case (2 parts),"Oseltamivir 75mg PO BID x 5 days. Start within 48 hours of symptom onset ideally, but treat ICU/hospitalized patients regardless of timing. Consider IV peramivir if unable to take PO. Baloxavir is alternative."
+Immunocompromised,,"I am admitting an immunocompromised patient with febrile neutropenia, should I include empiric anti-MRSA coverage in the initial antimicrobial regimen?","Not routinely. Start with antipseudomonal beta-lactam monotherapy (cefepime, pip-tazo, meropenem). Add vancomycin only for: severe mucositis, catheter-site infection, hemodynamic instability, or known MRSA colonization."
+Immunocompromised,,"I started vancomycin + cefepime for a patient with fever and neutropenia admitted with shock. On day 3, she is no longer on pressors, and all cultures are negative. The source of infection is uncertain. Can I discontinue vancomycin?","Yes. Discontinue vancomycin if hemodynamically stable and cultures negative at 48-72 hours. Continue cefepime while neutropenic. No need for empiric MRSA coverage if stable and no clear source."
+GI,,What is the recommended antibiotic and duration for patients with cirrhosis in acute upper gastrointestinal bleed (UGIB)?,"Ceftriaxone 1g IV daily for 7 days (or until discharge if sooner). Reduces bacterial infections, rebleeding, and mortality. Start at presentation. Alternative: fluoroquinolone if no recent use."
+GI,,Does my patient need long-term spontaneous bacterial peritonitis (SBP) prophylaxis?,"Yes if: history of prior SBP, ascitic fluid protein <1.5 g/dL with renal dysfunction or liver dysfunction, or variceal hemorrhage. Use daily norfloxacin, TMP-SMX, or ciprofloxacin."
+Immunocompromised,,Is additional antifungal therapy recommended in patients on posaconazole prophylaxis with concern for breakthrough fungal infection?,"Yes. Breakthrough fungal infection on azole prophylaxis requires switching to different class (echinocandin or amphotericin B). Check posaconazole levels. ID consult recommended for therapeutic management."
+GI,,My patient has an intra-abdominal infection. Should I add empiric coverage for yeast? What if they have a gastrointestinal perforation? Part 2: What would be an appropriate empiric treatment?,"Add antifungal for: recurrent perforation, recent surgery, immunosuppressed, or Candida score ≥3. Perforation alone does not require routine antifungal. Empiric: pip-tazo or ceftriaxone + metronidazole; add echinocandin if risk factors present."
+Micro/Diagnostics,,I suspect that my patient has a Candida infection. Should I order beta-D-glucan (Fungitell)?,"BDG can support diagnosis of invasive candidiasis but has limitations: poor specificity (false positives with recent surgery, dialysis), does not distinguish Candida from other fungi. Use as adjunct, not standalone test."
+Sepsis,,My patient in the ICU has developed sepsis after being on broad-spectrum antibacterials. Should I start empiric antifungal therapy? EMPIRICUS trial,"Do not start empiric antifungals routinely. EMPIRICUS trial showed no benefit. Only start if clinical/laboratory evidence of invasive candidiasis or high Candida score. Obtain fungal cultures first."
+Immunocompromised,,My patient with febrile neutropenia (FN) on IV cefepime is hemodynamically stable but continues to have fevers. Do we need to switch empiric antibiotics to IV meropenem?,"No. Persistent fever alone in stable patient does not require antibiotic escalation. Continue cefepime while completing workup. Switch only if: clinical deterioration, positive cultures suggesting resistance, or specific concern for resistant organisms."
+Immunocompromised,,When can I stop cefepime in FN if afebrile > 72 hours (How-Long trial),"Can stop after 72 hours afebrile IF: ANC >500, clinically stable, no active infection identified. However, many still continue until ANC >500 and afebrile >48 hours. How-Long trial supported shorter duration."
+GU,,New UTI definitions for male. Review of tx of uUTI 1st line nitrofurantoin x5 days,"Men with cystitis symptoms and no complicating factors can be treated as uncomplicated UTI: nitrofurantoin 100mg BID x 5 days. Previously all male UTIs considered complicated, but this is changing with new definitions."
+Antibiotics,,"My patient is growing E.faecalis, Bacteroides, and Enterobacter aerogenes from blood and abdominal fluid cultures. They are currently on piperacillin/tazobactam. Should I switch to meropenem?","Pip-tazo covers all three organisms. No need to switch to meropenem. Note: imipenem (not meropenem/ertapenem) has best enterococcal coverage among carbapenems, but pip-tazo is adequate."
+Bugs and their Drugs,,My patient has an intraabdominal fluid collection growing Enterococcus faecalis in cultures from IR drainage. He is on cefepime. Does this cover E. faecalis?,"No. Cefepime does NOT cover Enterococcus. Switch to ampicillin, vancomycin, or pip-tazo for E. faecalis coverage. Add metronidazole if source is intra-abdominal."
+Bacteremia/IE/endovascular,,"I got an alert that my patient's blood culture came back with 1 out of 4 bottles positive for GPCs, how do I know if it is a contaminant?","Common contaminants: CoNS, Corynebacterium, Cutibacterium. Consider contaminant if: 1/4 bottles, no central line, no prosthetic material, clinically well. True pathogen: multiple bottles positive, clinical sepsis, immunocompromised."
+Respiratory/pulm,,When are antibiotics indicated in patients admitted with Acute COPD exacerbation?,"Antibiotics indicated if ≥2 cardinal symptoms: increased dyspnea, increased sputum volume, increased sputum purulence. Also treat if mechanical ventilation required. Most common pathogens: H. influenzae, M. catarrhalis, S. pneumoniae."
+Respiratory/pulm,,Should antibiotics be prescribed for adult patients diagnosed with acute bronchitis?,"No. Acute bronchitis is viral in >90% of cases. Antibiotics do not improve outcomes. Counsel on symptom management. Consider pertussis testing if prolonged cough (>3 weeks) and treat if positive."
+Antibiotics,,Aminoglycosides- What levels should I be targeting? ADRs?,"Traditional dosing: peak 5-10 (gentamicin), trough <2. Extended-interval dosing preferred. Monitor renal function and avoid prolonged use. ADRs: nephrotoxicity (often reversible), ototoxicity (irreversible). Avoid with other nephrotoxins."
+Immunocompromised,,Can I narrow antibiotics in a patient with a defined infection but with ongoing neutropenia?,"Yes! If organism identified and patient stable, narrow to targeted therapy even if still neutropenic. Do not continue broad-spectrum unnecessarily. Continue antibiotics until ANC recovery and infection treated."
+Respiratory/pulm,,"My patient is admitted from a SNF, do they need empiric MRSA and Pseudomonal coverage for pneumonia (community-acquired)?","Not routinely. Risk factors for MRSA/Pseudomonas: prior isolation, recent IV antibiotics, recent hospitalization, structural lung disease. If no risk factors, treat as standard CAP. Can add coverage if risk factors present."
+Respiratory/pulm,,What are the common infectious causes of cough?,"Acute (<3 weeks): viral URI, acute bronchitis, pneumonia, pertussis. Chronic (>8 weeks): post-infectious cough, GERD, asthma, post-nasal drip. Most acute cough is viral and self-limited."
+Sepsis,,Why are not my antibiotics working?,"Consider: wrong organism (check cultures), resistance, inadequate source control, inadequate dosing/penetration, non-infectious etiology (drug fever, malignancy), immunosuppression, biofilm, or abscess requiring drainage."
+Fever in ICU,,Head to toe differential for fever in the ICU,"Neuro: meningitis, brain abscess. Pulm: pneumonia, PE. Cardiac: endocarditis, line infection. GI: C. diff, acalculous cholecystitis, intra-abdominal abscess. GU: UTI. Skin: wound infection, decubitus ulcer. Drug fever. Sinusitis (intubated). Non-infectious: DVT, MI."
+Micro/Diagnostics,,Empiric antibiotics for osteomyelitis- when to hold,"Hold empiric antibiotics until cultures obtained (bone biopsy preferred) unless septic or acute presentation. Osteomyelitis requires long-term therapy - need accurate organism identification for targeted treatment. Can wait days for proper cultures in chronic osteo."
+    </script>
+
+    <script>
+        let database = [];
+        let categories = [];
+        let currentCategory = null;
+
+        // Parse the embedded CSV data
+        function loadDatabase() {
+            const csvText = document.getElementById('csvData').textContent;
+            
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                dynamicTyping: false,
+                delimiter: ',',
+                quoteChar: '"',
+                escapeChar: '"',
+                complete: function(results) {
+                    console.log('Parsed data:', results.data);
+                    database = results.data;
+                    
+                    // Extract unique categories
+                    const categorySet = new Set();
+                    database.forEach(row => {
+                        if (row.category && row.category.trim()) {
+                            categorySet.add(row.category.trim());
+                        }
+                    });
+                    
+                    categories = Array.from(categorySet).sort();
+                    console.log('Categories:', categories);
+                    renderCategories();
+                    
+                    // Start with search view
+                    showSearchView();
+                },
+                error: function(error) {
+                    console.error('Parse error:', error);
+                }
+            });
+        }
+
+        function renderCategories() {
+            const categoryList = document.getElementById('categoryList');
+            categoryList.innerHTML = '';
+            
+            // Add "Search" option at the top
+            const searchOption = document.createElement('div');
+            searchOption.className = 'category-item active';
+            searchOption.textContent = '🔍 Search';
+            searchOption.onclick = function() {
+                showSearchView();
+            };
+            categoryList.appendChild(searchOption);
+            
+            // Add "Explore Content" heading
+            const exploreTitle = document.createElement('div');
+            exploreTitle.className = 'sidebar-title';
+            exploreTitle.textContent = 'Explore Content';
+            exploreTitle.style.marginTop = '1.5rem';
+            categoryList.appendChild(exploreTitle);
+            
+            categories.forEach(category => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.textContent = category;
+                div.onclick = function() {
+                    selectCategory(category);
+                };
+                categoryList.appendChild(div);
+            });
+            
+            console.log('Categories rendered');
+        }
+
+        function selectCategory(category) {
+            currentCategory = category;
+            
+            // Show content view, hide search view
+            document.getElementById('searchContainer').classList.add('hidden');
+            document.getElementById('contentHeader').classList.remove('hidden');
+            
+            // Clear search
+            document.getElementById('searchBox').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            
+            // Update active state
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent === category) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Filter content by category
+            const categoryContent = database.filter(row => 
+                row.category && row.category.trim() === category
+            );
+            
+            // Update header
+            document.getElementById('categoryTitle').textContent = category;
+            document.getElementById('contentCount').textContent = 
+                categoryContent.length + ' ' + (categoryContent.length === 1 ? 'item' : 'items');
+            
+            // Render content
+            const contentArea = document.getElementById('contentArea');
+            if (categoryContent.length === 0) {
+                contentArea.innerHTML = '<div class="empty-state"><p>No content available in this category</p></div>';
+            } else {
+                contentArea.innerHTML = '';
+                categoryContent.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'qa-card';
+                    
+                    const question = document.createElement('div');
+                    question.className = 'question';
+                    question.textContent = item.question || 'No question provided';
+                    
+                    const answer = document.createElement('div');
+                    answer.className = 'answer';
+                    answer.textContent = item.answer || 'No answer provided';
+                    
+                    card.appendChild(question);
+                    card.appendChild(answer);
+                    contentArea.appendChild(card);
+                });
+            }
+        }
+
+        function showSearchView() {
+            currentCategory = null;
+            
+            // Show search view, hide content view
+            document.getElementById('searchContainer').classList.remove('hidden');
+            document.getElementById('contentHeader').classList.add('hidden');
+            document.getElementById('contentArea').innerHTML = '';
+            
+            // Clear search
+            document.getElementById('searchBox').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            
+            // Update active state
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.textContent === '🔍 Search') {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Focus on search box
+            document.getElementById('searchBox').focus();
+        }
+
+        // Search functionality with multi-word support and prioritization
+        function performSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (!query.trim()) {
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            const queryTerms = lowerQuery.split(/\s+/).filter(term => term.length > 0);
+            
+            // Score each database entry based on matches
+            const scoredMatches = database.map(row => {
+                let score = 0;
+                const questionLower = (row.question || '').toLowerCase();
+                const answerLower = (row.answer || '').toLowerCase();
+                
+                // Check if all query terms are present
+                const allTermsInQuestion = queryTerms.every(term => questionLower.includes(term));
+                const allTermsInAnswer = queryTerms.every(term => answerLower.includes(term));
+                const allTermsPresent = allTermsInQuestion || allTermsInAnswer;
+                
+                if (!allTermsPresent) {
+                    return null;
+                }
+                
+                // Scoring system
+                queryTerms.forEach(term => {
+                    // Question matches worth more points
+                    if (questionLower.includes(term)) {
+                        score += 10;
+                    }
+                    // Answer matches worth fewer points
+                    if (answerLower.includes(term)) {
+                        score += 3;
+                    }
+                });
+                
+                // Bonus for exact phrase match in question
+                if (queryTerms.length > 1 && questionLower.includes(lowerQuery)) {
+                    score += 20;
+                }
+                
+                return { row, score };
+            }).filter(item => item !== null);
+            
+            // Sort by score (highest first)
+            scoredMatches.sort((a, b) => b.score - a.score);
+            const matches = scoredMatches.map(item => item.row);
+
+            if (matches.length === 0) {
+                searchResults.innerHTML = '<div class="empty-state" style="padding: 2rem 1rem;"><p style="font-size: 0.95rem;">No matches found</p></div>';
+                return;
+            }
+
+            searchResults.innerHTML = '';
+            matches.forEach(item => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'search-result-item';
+                resultDiv.onclick = function() {
+                    showSearchResult(item.category, item.question);
+                };
+                
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'search-result-category';
+                categoryDiv.textContent = item.category;
+                
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'search-result-question';
+                questionDiv.innerHTML = highlightMultipleTerms(item.question, queryTerms);
+                
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'search-result-answer';
+                answerDiv.innerHTML = highlightMultipleTerms(item.answer, queryTerms);
+                
+                resultDiv.appendChild(categoryDiv);
+                resultDiv.appendChild(questionDiv);
+                resultDiv.appendChild(answerDiv);
+                searchResults.appendChild(resultDiv);
+            });
+        }
+
+        // Highlight multiple search terms
+        function highlightMultipleTerms(text, terms) {
+            if (!terms || terms.length === 0) return text;
+            
+            let highlightedText = text;
+            terms.forEach(term => {
+                const regex = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\Respiratory/pulm,,Should antibiotics be prescribed for adult patients diagnosed with acute bronchitis?,"No. Acute bronchitis is viral in >90% of cases. Antibiotics do not improve outcomes. Counsel on symptom management. Consider pertussis testing if prolonged cough (>3 ') + ')', 'gi');
+                highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+            });
+            
+            return highlightedText;
+        }
+
+        function showSearchResult(category, question) {
+            // Clear search
+            document.getElementById('searchBox').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            
+            // Select the category
+            selectCategory(category);
+            
+            // Scroll to the specific question
+            setTimeout(function() {
+                const qaCards = document.querySelectorAll('.qa-card');
+                qaCards.forEach(card => {
+                    const cardQuestion = card.querySelector('.question').textContent;
+                    if (cardQuestion === question) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.style.backgroundColor = '#fffbea';
+                        setTimeout(function() {
+                            card.style.transition = 'background-color 1s ease';
+                            card.style.backgroundColor = 'transparent';
+                        }, 500);
+                    }
+                });
+            }, 100);
+        }
+
+        // Initialize
+        loadDatabase();
+        
+        // Add search event listener
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            performSearch(e.target.value);
+        });
+        
+        // Make header title clickable to return to search
+        document.getElementById('headerTitle').onclick = function() {
+            showSearchView();
+        };
+    </script>
 </body>
 </html>
